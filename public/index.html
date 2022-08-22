@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag Garbage Game</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="manifest" href="favicon/site.webmanifest">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        #main {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        #main>div {
+            margin: 1rem;
+        }
+
+        #game {
+            position: relative;
+            width: 600px;
+            height: 500px;
+            overflow: hidden;
+            border: 2px solid #dddd;
+            background-color: #eee;
+        }
+
+        #garbage-ctn {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            bottom: 0px;
+        }
+
+        #garbage-ctn>div:nth-child(1) {
+            height: 20px;
+            background-color: red;
+        }
+
+        #garbage-ctn>div:nth-child(2) {
+            width: 90px;
+            height: 80px;
+            margin: auto;
+            background-color: green;
+        }
+
+        .garbage {
+            width: 48px;
+            height: 48px;
+            background-color: brown;
+            position: absolute;
+            left: 540px;
+            top: 600px;
+        }
+
+        #player-detail {
+            width: 200px;
+            padding: 1rem;
+            border: 2px solid #ddd;
+        }
+
+        button {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+        }
+
+        #player-detail button {
+            width: 100%;
+            font-size: 2rem;
+        }
+
+        #player-detail>div {
+            margin-top: 1rem;
+        }
+
+        #player-detail>h2 {
+            margin-bottom: 1rem;
+        }
+
+        #recent-player {
+            width: 360px;
+            padding: 1rem;
+            border: 2px solid #ddd;
+        }
+
+        #recent-player table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #recent-player td {
+            border: 1px solid #ddd;
+            padding: 0.2rem;
+        }
+
+        #login,
+        #register {
+            width: 500px;
+            margin: 1rem auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 1rem;
+        }
+
+        #login label,
+        #register label {
+            display: block;
+            margin: 0.5rem 0;
+        }
+
+        #login input,
+        #register input {
+            width: 100%;
+            padding: 0.4rem;
+            font-size: 1rem;
+        }
+
+        #login button,
+        #register button {
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        #login input[type=checkbox],
+        #register input[type=checkbox] {
+            width: auto;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+
+        .is-invalid {
+            border: 2px solid red;
+        }
+
+        .is-valid {
+            border: 2px solid green;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login">
+        <h1>Login</h1>
+        <div>
+            <div>
+                <label for="username">Username</label>
+                <input type="text" autocomplete="username" name="username"></input>
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input type="password" name="password" autocomplete="current-password"></input>
+            </div>
+            <input type="checkbox"></input><span>Show Password</span>
+            <button>Login</button>
+            <a href="#">New player register first by clicking this link</a>
+        </div>
+    </div>
+    <div id="register">
+        <h1>Register</h1>
+        <div>
+            <div>
+                <label for="username">Username</label>
+                <input type="text" autocomplete="username" name="username"></input>
+            </div>
+            <div>
+                <label for="username">Password</label>
+                <input type="password" autocomplete="current-password" name="password"></input>
+            </div>
+            <input type="checkbox"></input><span>Show Password</span>
+            <button>Register</button>
+            <a href="#">If already player login by clicking this link</a>
+        </div>
+    </div>
+    <div id="main">
+        <div id="player-detail">
+            <h1>Score</h1>
+            <h2>0</h2>
+            <h1>Time</h1>
+            <h2>0</h2>
+            <div>
+                <h3>Yey, </h3>
+                <h3>Drag a garbage in bucket to score a point. Score will be 0 if dropped outside</h3>
+                <button>START</button>
+            </div>
+        </div>
+        <div id="game">
+            <div id="garbage-ctn">
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+        <div id="recent-player">
+            <h1>Latest player score!!</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <td>Username</td>
+                        <td>Score</td>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>
+    <script>
+        const BASE_URL = window.location.href;
+
+        const login = {
+            mainCtn: document.getElementById("login"),
+            data: { username: "", password: "" },
+            start: function () {
+                login.mainCtn.style.display = "block";
+            },
+            destroy: function () {
+                login.mainCtn.style.display = "none";
+            },
+            usernameInput: document.getElementsByName("username")[0],
+            passwordInput: document.getElementsByName("password")[0],
+            submitBtn: document.querySelector("#login button"),
+            showPassword: document.querySelector("#login input[type=checkbox]"),
+            showRegister: document.querySelector("#login a")
+        }
+
+        login.showRegister.addEventListener("click", function (e) {
+            e.preventDefault();
+            login.destroy();
+            register.start();
+        });
+
+        login.usernameInput.addEventListener("input", function (e) {
+            login.data.username = e.target.value;
+            hasValue(e.target);
+        });
+
+        login.passwordInput.addEventListener("input", function (e) {
+            login.data.password = e.target.value;
+            hasValue(e.target);
+            if (login.data.password.length <= 7) isInvalid(login.passwordInput);
+        });
+
+        login.submitBtn.addEventListener("click", function (e) {
+            let result = true;
+            if (!hasValue(login.usernameInput)) result = false;
+            if (!hasValue(login.passwordInput)) result = false;
+            if (login.data.password.length <= 7) isInvalid(login.passwordInput);
+            if (result) {
+                fetch(BASE_URL + "login", {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + btoa(login.data.username + ":" + login.data.password)
+                    },
+                    method: "POST",
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.message === "unauthorized access") {
+                            isInvalid(login.usernameInput);
+                            isInvalid(login.passwordInput);
+                        }
+                        else if (res.message === "password wrong") isInvalid(login.passwordInput)
+                        else {
+                            login.destroy();
+                            game.start();
+                        }
+                    }).catch(err => {
+                        console.log(err);
+                    });
+            }
+        });
+
+        login.showPassword.addEventListener("click", function (e) {
+            login.passwordInput.type = e.target.checked ? "text" : "password";
+        });
+
+        const register = {
+            mainCtn: document.getElementById("register"),
+            data: { username: "", password: "" },
+            start: function () {
+                register.mainCtn.style.display = "block";
+            },
+            destroy: function () {
+                register.mainCtn.style.display = "none";
+            },
+            usernameInput: document.getElementsByName("username")[1],
+            passwordInput: document.getElementsByName("password")[1],
+            submitBtn: document.querySelector("#register button"),
+            showPassword: document.querySelector("#register input[type=checkbox]"),
+            showRegister: document.querySelector("#register a")
+        }
+
+        register.showRegister.addEventListener("click", function (e) {
+            e.preventDefault();
+            register.destroy();
+            login.start();
+        });
+
+        register.usernameInput.addEventListener("input", function (e) {
+            register.data.username = e.target.value;
+            hasValue(e.target);
+        });
+
+        register.passwordInput.addEventListener("input", function (e) {
+            register.data.password = e.target.value;
+            hasValue(e.target);
+            if (register.data.password.length <= 7) isInvalid(register.passwordInput);
+        });
+
+        register.submitBtn.addEventListener("click", function (e) {
+            let result = true;
+            if (!hasValue(register.usernameInput)) result = false;
+            if (!hasValue(register.passwordInput)) result = false;
+            if (register.data.password.length <= 7) isInvalid(register.passwordInput);
+            if (result) {
+                fetch(BASE_URL + "register", {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    method: "POST",
+                    body: JSON.stringify(register.data)
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.message === "username already present") {
+                            isInvalid(register.usernameInput);
+                            alert("Username already in use !!");
+                        } else {
+                            register.destroy();
+                            game.start();
+                        }
+                    }).catch(err => {
+                        console.log(err);
+                    });
+            }
+        });
+
+        register.showPassword.addEventListener("click", function (e) {
+            register.passwordInput.type = e.target.checked ? "text" : "password";
+        });
+
+        const game = {
+            startTime: undefined, previousTimeStamp: undefined, scoreList: [], onDrag: false,
+            mainCtn: document.getElementById("main"),
+            area: document.getElementById("game"),
+            container: document.getElementById("garbage-ctn"),
+            startBtn: document.querySelector("#player-detail button"),
+            tbody: document.querySelector("#recent-player tbody"),
+            retrievePlayerList: undefined,
+            player: {
+                score: 0, start: false, speed: 2,
+                scoreElem: document.querySelectorAll("#player-detail h2")[0],
+                timeElem: document.querySelectorAll("#player-detail h2")[1]
+            },
+            enemy: {
+                x: 540, y: 600,
+                elem: undefined
+            },
+            start: function () {
+                game.mainCtn.style.display = "flex";
+                if (game.retrievePlayerList) clearInterval(game.retrievePlayerList);
+                game.retrievePlayerList = setInterval(() => {
+                    fetchPlayerList();
+                }, 10000);
+            },
+            destroy: function () {
+                game.mainCtn.style.display = "none";
+                if (game.retrievePlayerList) clearInterval(game.retrievePlayerList);
+            }
+        }
+
+        game.container.addEventListener("dragover", function (e) {
+            e.preventDefault();
+        });
+
+        game.startBtn.addEventListener("click", function (e) {
+            if (!game.player.start) {
+                game.startBtn.disabled = true;
+                start();
+            }
+        })
+
+        const garbage = document.createElement("div");
+        garbage.classList.add("garbage");
+        garbage.draggable = true;
+        game.area.appendChild(garbage);
+
+        garbage.addEventListener("dragstart", function (e) {
+            game.onDrag = true;
+        });
+
+        garbage.addEventListener("dragend", function (e) {
+            if (!game.player.start) return;
+            game.enemy.y = 0;
+            let dropRect = {
+                top: e.pageY,
+                bottom: e.pageY + 50,
+                left: e.pageX,
+                right: e.pageY
+            }
+            if (isColliding(dropRect, game.container.getBoundingClientRect())) {
+                game.enemy.y = 0;
+                game.player.score += 1;
+            } else {
+                game.player.score = 0;
+            }
+            game.onDrag = false;
+            game.player.scoreElem.innerHTML = game.player.score;
+        });
+
+        game.enemy.elem = garbage;
+
+        function start() {
+            game.startTime = undefined;
+            game.player.score = 0;
+            game.player.speed = 2;
+            game.enemy.y = 0;
+            game.player.start = true;
+            game.onDrag = false;
+            window.requestAnimationFrame(update);
+        }
+
+        function update(timestamp) {
+            if (!game.player.start) return;
+            if (game.startTime === undefined) {
+                game.startTime = timestamp;
+            }
+            const elapsed = timestamp - game.startTime;
+            game.player.timeElem.innerHTML = parseInt(elapsed / 1000);
+            if (elapsed / 1000 > 60) {
+                game.player.start = false;
+                game.startBtn.disabled = false;
+                game.startBtn.innerHTML = "RESTART";
+                addScoreToServer(game.player.score);
+            }
+            if (!game.onDrag) {
+                game.enemy.y += game.player.speed;
+                game.enemy.elem.style.top = game.enemy.y + "px";
+            }
+            isGarbageOutside();
+            game.player.scoreElem.innerHTML = game.player.score;
+            window.requestAnimationFrame(update);
+        }
+
+        function isGarbageOutside() {
+            if (game.enemy.y > 500) {
+                game.enemy.y = 0;
+                game.player.score = 0;
+            }
+        }
+
+        function isColliding(aRect, bRect) {
+            return !((aRect.bottom < bRect.top) ||
+                (aRect.top > bRect.bottom) ||
+                (aRect.right < bRect.left) ||
+                (aRect.left > bRect.right))
+        }
+
+        function addScoreToServer(score) {
+            fetch(BASE_URL + "score", {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(login.data.username + ":" + login.data.password)
+                },
+                method: "POST",
+                body: JSON.stringify({ score: game.player.score })
+            }).catch(err => {
+                console.log(err);
+            });
+        }
+
+        function fetchPlayerList() {
+            fetch(BASE_URL + "score", {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(login.data.username + ":" + login.data.password)
+                },
+                method: "GET",
+            })
+                .then(res => res.json())
+                .then(res => {
+                    game.tbody.innerHTML = "";
+                    res.forEach(item => {
+                        addEntryInRecentPlayer(item.username, item.score);
+                    });
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        }
+
+        function addEntryInRecentPlayer(name, score) {
+            const tr = document.createElement("tr");
+            const tdName = document.createElement("td");
+            tdName.innerText = name;
+            tr.appendChild(tdName);
+            const tdScore = document.createElement("td");
+            tdScore.innerText = score;
+            tr.appendChild(tdScore);
+            game.tbody.appendChild(tr);
+        }
+
+        function hasValue(elem) {
+            let result = elem.value !== "";
+            result ? isValid(elem) : isInvalid(elem);
+            return result;
+        }
+
+        function removeValidInvalid(elem) {
+            elem.classList.remove("is-valid", "is-invalid");
+        }
+
+        function isInvalid(elem) {
+            removeValidInvalid(elem);
+            elem.classList.add("is-invalid");
+        }
+
+        function isValid(elem) {
+            removeValidInvalid(elem);
+            elem.classList.add("is-valid");
+        }
+
+        game.destroy();
+        register.destroy();
+    </script>
+</body>
+
+</html>
